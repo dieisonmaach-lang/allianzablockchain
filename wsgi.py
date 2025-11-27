@@ -20,9 +20,9 @@ if os.path.exists('.env.production'):
 elif os.path.exists('.env'):
     load_dotenv('.env')
 
-# Importar app Flask e instâncias
+# Importar app Flask
 try:
-    from allianza_blockchain import app, blockchain, quantum_security, bridge
+    from allianza_blockchain import app
     
     # Configurar para produção
     app.config['ENV'] = os.getenv('FLASK_ENV', 'production')
