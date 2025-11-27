@@ -1579,9 +1579,9 @@ class RealCrossChainBridge:
                         utxos = wallet.utxos()
                     else:
                         # Se não há wallet, criar endereço padrão
-                        key = HDKey(from_private_key, network='testnet')
-                        from_address = key.address(script_type='p2pkh')
-                        print(f"⚠️  Usando endereço padrão (legacy): {from_address}")
+                            key = HDKey(from_private_key, network='testnet')
+                            from_address = key.address(script_type='p2pkh')
+                            print(f"⚠️  Usando endereço padrão (legacy): {from_address}")
                     
                     if not wallet:
                         return {
