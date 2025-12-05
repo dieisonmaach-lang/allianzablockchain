@@ -43,6 +43,7 @@ This is the **public repository** for developers and investors to validate Allia
 - **Documentation** (`docs/`) - API reference, guides, and technical docs
 - **Templates** (`templates/testnet/`) - UI templates for testnet
 - **Technical Proofs** (`TECHNICAL_PROOFS_COMPLETE_FINAL.json`) - 41 technical proofs
+- **Real Proofs** (`proofs/`) - Verifiable real-world proofs (transfers, QRS-3, ALZ-NIEV, QSS)
 - **Whitepaper** (`WHITEPAPER_ALLIANZA_BLOCKCHAIN.md`) - Complete technical documentation
 
 ### 🔒 **Not Included (Private Repository):**
@@ -77,6 +78,7 @@ This is the **public repository** for developers and investors to validate Allia
 - 🌐 **Testnet:** https://testnet.allianza.tech
 - 📦 **npm Package:** https://www.npmjs.com/package/allianza-qss-js
 - 📄 **Technical Proofs:** See `TECHNICAL_PROOFS_COMPLETE_FINAL.json`
+- 🔐 **Real Proofs:** See `proofs/` directory for verifiable real-world proofs
 
 ---
 
