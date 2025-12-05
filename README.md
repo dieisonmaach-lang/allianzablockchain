@@ -92,6 +92,14 @@ This is the **public repository** for developers and investors to validate Allia
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+**💰 Bounties Available:** Check [Bounty Issues](https://github.com/dieisonmaach-lang/allianzablockchainpublic/issues?q=is%3Aissue+label%3Abounty) for paid opportunities!
+
+---
+
 ## ⚠️ Security Notice
 
 This repository contains **public-facing code and documentation only**. The core blockchain implementation, private keys, and sensitive data are kept in a private repository for security reasons.
@@ -100,7 +108,7 @@ This repository contains **public-facing code and documentation only**. The core
 
 ## 📄 License
 
-MIT License - See `LICENSE` file (if included)
+MIT License - See `LICENSE` file
 
 ---
 
