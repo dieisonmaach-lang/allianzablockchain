@@ -102,7 +102,7 @@ For more information, see:
 
 - [API Reference](../docs/API_REFERENCE.md)
 - [Quick Start Guide](../docs/QUICK_START.md)
-- [QSS for Other Blockchains](../GUIA_QSS_PARA_OUTRAS_BLOCKCHAINS.md)
+- [QSS for Other Blockchains](../QSS_FOR_OTHER_BLOCKCHAINS.md)
 - [Whitepaper](../WHITEPAPER_ALLIANZA_BLOCKCHAIN.md)
 
 ---

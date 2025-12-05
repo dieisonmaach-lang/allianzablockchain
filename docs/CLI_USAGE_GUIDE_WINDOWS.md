@@ -1,19 +1,19 @@
-# 💻 Guia de Uso do CLI - Windows
+# 💻 CLI Usage Guide - Windows
 
-Guia específico para usar o CLI da Allianza Blockchain no Windows PowerShell.
+Specific guide for using Allianza Blockchain CLI on Windows PowerShell.
 
 ---
 
-## ⚠️ IMPORTANTE: Não use `<` e `>`
+## ⚠️ IMPORTANT: Do not use `<` and `>`
 
-No Windows PowerShell, `<` e `>` são redirecionadores. **NÃO use** esses caracteres nos comandos!
+In Windows PowerShell, `<` and `>` are redirectors. **DO NOT use** these characters in commands!
 
-**❌ ERRADO:**
+**❌ WRONG:**
 ```powershell
 python cli/allianza_cli.py wallet balance <0xBeEd0E7001daA6E72146A5BA74Ace7D958037af5>
 ```
 
-**✅ CORRETO:**
+**✅ CORRECT:**
 ```powershell
 python cli/allianza_cli.py wallet balance 0xBeEd0E7001daA6E72146A5BA74Ace7D958037af5
 ```
@@ -159,12 +159,12 @@ python cli/allianza_cli.py transaction cross-chain bitcoin 1A1zP1eP5QGefi2DMPTfT
 
 **Solução:** Remova `<` e `>` e use os valores diretamente.
 
-**❌ ERRADO:**
+**❌ WRONG:**
 ```powershell
 python cli/allianza_cli.py wallet balance <0xBeEd0E7001daA6E72146A5BA74Ace7D958037af5>
 ```
 
-**✅ CORRETO:**
+**✅ CORRECT:**
 ```powershell
 python cli/allianza_cli.py wallet balance 0xBeEd0E7001daA6E72146A5BA74Ace7D958037af5
 ```
