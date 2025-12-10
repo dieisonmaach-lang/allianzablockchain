@@ -4507,6 +4507,141 @@ class RealCrossChainBridge:
                                                 "status_code": broadcast_response.status_code,
                                                 "error": error_text
                                             }, "error")
+
+                                        # ✅ NOVO FALLBACK: construir e assinar transação manualmente com python-bitcointx (P2PKH) antes de desistir
+                                        try:
+                                            print("   🔧 Fallback extra: criando transação manual com python-bitcointx...")
+                                            add_log("trying_python_bitcointx_fallback", {}, "info")
+
+                                            from bitcointx.wallet import CBitcoinSecret, P2PKHBitcoinAddress
+                                            from bitcointx.core import CMutableTransaction, CMutableTxOut, CMutableTxIn, COutPoint
+                                            from bitcointx.core.script import CScript, OP_RETURN, OP_DUP, OP_HASH160, OP_EQUALVERIFY, OP_CHECKSIG, SignatureHash, SIGHASH_ALL
+                                            from bitcointx import select_chain_params
+                                            from bitcointx.core import lx
+
+                                            select_chain_params('bitcoin/testnet')
+
+                                            # Carregar chave e endereços
+                                            seckey = CBitcoinSecret(from_private_key)
+                                            from_addr = P2PKHBitcoinAddress(from_address)
+                                            to_addr = P2PKHBitcoinAddress(to_address) if to_address.startswith(('m', 'n')) else None
+
+                                            # Se destino não for P2PKH (ex: bech32 tb1), usar scriptPubKey custom
+                                            dest_script = to_addr.to_scriptPubKey() if to_addr else None
+                                            if not dest_script:
+                                                from bitcointx.core.key import CPubKey
+                                                from bitcointx.wallet import CBitcoinAddress
+                                                try:
+                                                    dest_script = CBitcoinAddress(to_address).to_scriptPubKey()
+                                                except Exception:
+                                                    raise Exception(f"Destino {to_address} não suportado pelo fallback python-bitcointx")
+
+                                            # Buscar scriptPubKey para cada UTXO (necessário para assinatura correta)
+                                            enriched_utxos = []
+                                            for utxo in utxos:
+                                                txid = utxo.get('txid') or utxo.get('tx_hash')
+                                                vout = int(utxo.get('vout') or utxo.get('output_n') or 0)
+                                                value = int(utxo.get('value', 0))
+                                                if not txid or value <= 0:
+                                                    continue
+                                                try:
+                                                    tx_detail_url = f"https://blockstream.info/testnet/api/tx/{txid}"
+                                                    tx_detail_resp = requests.get(tx_detail_url, timeout=10)
+                                                    if tx_detail_resp.status_code == 200:
+                                                        tx_detail = tx_detail_resp.json()
+                                                        vouts = tx_detail.get("vout", [])
+                                                        if vout < len(vouts):
+                                                            spk = vouts[vout].get("scriptpubkey")
+                                                            if spk:
+                                                                utxo["scriptpubkey"] = spk
+                                                                enriched_utxos.append(utxo)
+                                                            else:
+                                                                print(f"   ⚠️  scriptpubkey ausente para {txid}:{vout}")
+                                                        else:
+                                                            print(f"   ⚠️  vout {vout} fora do range para {txid}")
+                                                    else:
+                                                        print(f"   ⚠️  Falha ao obter tx {txid}: {tx_detail_resp.status_code}")
+                                                except Exception as e:
+                                                    print(f"   ⚠️  Erro ao enriquecer UTXO {txid}:{vout}: {e}")
+
+                                            if not enriched_utxos:
+                                                raise Exception("Nenhum UTXO enriquecido com scriptpubkey para assinar")
+
+                                            tx = CMutableTransaction()
+
+                                            # Adicionar inputs
+                                            for u in enriched_utxos:
+                                                txid = u.get("txid") or u.get("tx_hash")
+                                                vout = int(u.get("vout") or u.get("output_n") or 0)
+                                                outpoint = COutPoint(lx(txid), vout)
+                                                tx.vin.append(CMutableTxIn(outpoint))
+
+                                            # Adicionar outputs: destino
+                                            tx.vout.append(CMutableTxOut(int(output_value), dest_script))
+
+                                            # OP_RETURN opcional
+                                            if source_tx_hash:
+                                                memo_bytes = bytes.fromhex(source_tx_hash) if len(source_tx_hash) % 2 == 0 else source_tx_hash.encode()
+                                                if len(memo_bytes) > 80:
+                                                    memo_bytes = memo_bytes[:80]
+                                                op_return_script = CScript([OP_RETURN, memo_bytes])
+                                                tx.vout.append(CMutableTxOut(0, op_return_script))
+
+                                            # Troco
+                                            if change_value > 546:
+                                                tx.vout.append(CMutableTxOut(int(change_value), from_addr.to_scriptPubKey()))
+
+                                            # Assinar cada input (P2PKH)
+                                            for i, u in enumerate(enriched_utxos):
+                                                spk_hex = u.get("scriptpubkey")
+                                                value = int(u.get("value", 0))
+                                                spk = bytes.fromhex(spk_hex)
+                                                sighash = SignatureHash(CScript(spk), tx, i, SIGHASH_ALL)
+                                                sig = seckey.sign(sighash) + bytes([SIGHASH_ALL])
+                                                tx.vin[i].scriptSig = CScript([sig, seckey.pub])
+
+                                            raw_tx_hex = tx.serialize().hex()
+                                            print(f"   ✅ python-bitcointx gerou raw TX ({len(raw_tx_hex)} hex chars)")
+
+                                            # Broadcast novamente via Blockstream
+                                            broadcast_response = requests.post(
+                                                "https://blockstream.info/testnet/api/tx",
+                                                data=raw_tx_hex,
+                                                headers={"Content-Type": "text/plain"},
+                                                timeout=30
+                                            )
+
+                                            if broadcast_response.status_code == 200:
+                                                tx_hash = broadcast_response.text.strip()
+                                                print(f"   ✅ Broadcast OK (fallback python-bitcointx)! Hash: {tx_hash}")
+                                                add_log("transaction_broadcasted_blockstream_bitcointx", {"tx_hash": tx_hash}, "info")
+                                                proof_data["success"] = True
+                                                proof_data["tx_hash"] = tx_hash
+                                                proof_data["final_result"] = {
+                                                    "success": True,
+                                                    "tx_hash": tx_hash,
+                                                    "method": "blockstream_api_bitcointx"
+                                                }
+                                                proof_file = self._save_transaction_proof(proof_data)
+                                                return {
+                                                    "success": True,
+                                                    "tx_hash": tx_hash,
+                                                    "from": from_address,
+                                                    "to": to_address,
+                                                    "amount": amount_btc,
+                                                    "chain": "bitcoin",
+                                                    "status": "broadcasted",
+                                                    "explorer_url": f"https://blockstream.info/testnet/tx/{tx_hash}",
+                                                    "note": "✅ Transação REAL criada com python-bitcointx e broadcastada via Blockstream",
+                                                    "real_broadcast": True,
+                                                    "method": "blockstream_api_bitcointx",
+                                                    "proof_file": proof_file
+                                                }
+                                            else:
+                                                print(f"   ⚠️  Broadcast via Blockstream falhou também no fallback python-bitcointx: {broadcast_response.status_code} - {broadcast_response.text[:200]}")
+                                        except Exception as bitcointx_err:
+                                            print(f"   ❌ Fallback python-bitcointx falhou: {bitcointx_err}")
+                                            add_log("bitcointx_fallback_failed", {"error": str(bitcointx_err)}, "error")
                                             
                                             # Tentar BlockCypher como fallback
                                             print(f"   🔄 Tentando BlockCypher como fallback...")
