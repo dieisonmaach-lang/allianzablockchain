@@ -641,18 +641,24 @@ class BridgeFreeInterop:
             tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
             
             # URL do explorer
+            # ✅ CORREÇÃO: Garantir que hash tenha prefixo 0x para explorers EVM
+            tx_hash_hex = tx_hash.hex() if hasattr(tx_hash, 'hex') else str(tx_hash)
+            # Adicionar 0x se não tiver (necessário para Polygonscan, Etherscan, BSCScan)
+            if not tx_hash_hex.startswith('0x'):
+                tx_hash_hex = '0x' + tx_hash_hex
+            
             explorer_url = None
             if target_chain == "bsc":
-                explorer_url = f"https://testnet.bscscan.com/tx/{tx_hash.hex()}"
+                explorer_url = f"https://testnet.bscscan.com/tx/{tx_hash_hex}"
             elif target_chain == "polygon":
-                explorer_url = f"https://amoy.polygonscan.com/tx/{tx_hash.hex()}"
+                explorer_url = f"https://amoy.polygonscan.com/tx/{tx_hash_hex}"
             elif target_chain == "ethereum":
-                explorer_url = f"https://sepolia.etherscan.io/tx/{tx_hash.hex()}"
+                explorer_url = f"https://sepolia.etherscan.io/tx/{tx_hash_hex}"
             
             result = {
                 "success": True,
                 "real_transaction": True,
-                "tx_hash": tx_hash.hex(),
+                "tx_hash": tx_hash_hex,  # ✅ Usar tx_hash_hex que já tem 0x
                 "from": account.address,
                 "to": recipient_checksum,
                 "amount": amount,

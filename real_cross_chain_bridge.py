@@ -1124,6 +1124,10 @@ class RealCrossChainBridge:
                     "to": to_checksum
                 }
             
+            # ✅ CORREÇÃO: Garantir que tx_hash_hex tenha prefixo 0x para explorers EVM
+            if not tx_hash_hex.startswith('0x'):
+                tx_hash_hex = '0x' + tx_hash_hex
+            
             # Atualizar explorer_urls com tx_hash (já definido antes do try)
             explorer_urls = {
                 "polygon": f"https://amoy.polygonscan.com/tx/{tx_hash_hex}",
